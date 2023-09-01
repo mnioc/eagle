@@ -58,3 +58,12 @@ class AuthenticatedHttpClient(HttpClient, metaclass=StrategyMeta):
         This method is used to get the authentication object.
         """
         pass
+
+    @classmethod
+    def get_client(cls, auth_type: str, **kwargs: Any) -> 'AuthenticatedHttpClient':
+        """
+        This method is used to get the client object.
+        """
+        if auth_type not in cls.auth_registry:
+            raise ValueError(f'Invalid auth type: {auth_type}')
+        return cls.auth_registry[auth_type](**kwargs)
