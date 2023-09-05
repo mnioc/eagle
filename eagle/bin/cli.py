@@ -1,7 +1,7 @@
 from typing import Optional
 import click
 import os
-# from easy_tester.core.runner import Runner
+from eagle.runner import Runner
 
 
 @click.group()
@@ -10,21 +10,14 @@ def runner_cli():
 
 
 @runner_cli.command()
-@click.option('--dir', '-d', help='Test directory')
+@click.option('--root_path', '-p', help='Test root directory')
 @click.option('--exclude', '-e', help='Exclude test directory')
 @click.option('--prifx', '-p', help='Test case prefix')
 def run(
-    dir: Optional[str] = None,
+    root_path: Optional[str] = None,
     exclude: Optional[str] = None,
     prifx: Optional[str] = None,
 ):  # sourcery skip: avoid-builtin-shadow
-    if dir is None:
-        dir = os.getcwd()
-    ...
-    from eagle.logger import logger
-    
-    logger.debug(f"{dir}")
-    logger.info(f"{dir}")
-    logger.warning(f"{dir}")
-    logger.error(f"{dir}")
-    logger.critical(f"{dir}")
+    if root_path is None:
+        root_path = os.getcwd()
+    Runner(root_path=root_path).run()

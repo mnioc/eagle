@@ -45,9 +45,14 @@ class AppConfig(Mapping):
         return len(self._config)
 
 
+if not os.path.exists(os.path.join(os.path.expanduser("~/.eagle"))):
+    os.makedirs(os.path.join(os.path.expanduser("~/.eagle")))
+
+
 class AppSettings:
 
     TOKEN_CACHE_FILE = os.path.join(os.path.expanduser("~/.eagle"), "token_cache.json")
+
     TOKEN_RETRY = 3
 
 
