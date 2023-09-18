@@ -1,3 +1,6 @@
+import re
+import string
+import random
 from typing import Any, Dict, List, Union
 from jsonpath_rw import parse
 from prettytable import PrettyTable
@@ -36,3 +39,16 @@ def show_data_table(data: Union[Dict[str, Any], List[Any]]):
             table.add_row(row_data)
 
         print(table)
+
+
+def is_valid_url(url):
+    url_pattern = r'^(https?|)://[^\s/$.?#].[^\s]*$'
+
+    if re.match(url_pattern, url):
+        return True
+    else:
+        return False
+
+
+def generate_random_string(length=10, allow_string=string.ascii_letters+string.digits):
+    return ''.join(random.choice(allow_string) for _ in range(length))

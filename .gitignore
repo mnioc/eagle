@@ -15,6 +15,9 @@ backup/
 playground/
 .ipynb_checkpoints/
 
+example1/
+example2/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

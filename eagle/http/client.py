@@ -3,9 +3,8 @@ import abc
 import inspect
 from typing import Any, Type, Dict, Optional
 from requests.models import Response, Request
-from eagle.enums import HttpAuthType
+from eagle.http.enums import HttpAuthType
 from eagle.http.auth import Authentication
-from eagle.http.hooks import log_response
 
 
 class HttpClient(requests.Session):
@@ -127,16 +126,8 @@ class AuthenticatedHttpClient(HttpClient, metaclass=StrategyMeta):
         :rtype: requests.Response
         """
         # Create the Request.
-        if self.endpoint:
+        if self.endpoint and not url.startswith('http'):
             url = self.endpoint + url
-
-        hooks = hooks or {
-            'response': [],
-        }
-        if 'response' not in hooks:
-            hooks['response'] = []
-
-        hooks['response'].append(log_response)
 
         req = Request(
             method=method.upper(),
@@ -174,11 +165,13 @@ class AuthenticatedHttpClient(HttpClient, metaclass=StrategyMeta):
         """
         This method is used to send a request.
         """
-        if self.endpoint and 'http' not in request.url:
+
+        if self.endpoint and not request.url.startswith('http'):
             request.url = self.endpoint + request.url
+
         if self.authentication:
             request = self.authentication.set_authentication(request)
-        request.register_hook('response', log_response)
+
         prep = self.prepare_request(request)
         return self.send(prep, **kwargs)
 

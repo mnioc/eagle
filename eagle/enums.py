@@ -1,7 +1,12 @@
+from enum import Enum
 
 
-class HttpAuthType:
-    """HTTP authentication types."""
+class EnumWithChoices(Enum):
 
-    BASIC = 'basic'
-    BEARER = 'bearer'
+    @classmethod
+    def choices(cls):
+        return tuple((i.value, i.name) for i in cls)
+
+    @classmethod
+    def values(cls):
+        return tuple(i.value for i in cls)

@@ -12,10 +12,8 @@ def log_response(response: Response, *args, **kwargs) -> None:
     if response.status_code >= 500:
         logger.error(msg)
         logger.exception(response.text)
-    elif response.status_code >= 400:
-        logger.warning(msg)
     else:
-        logger.debug(msg)
+        logger.info(msg)
 
 
 def show_response_table(response: Response, response_data_json_path: str, *args, **kwaargs) -> None:

@@ -7,7 +7,7 @@ from jsonpath_rw import parse
 from eagle.settings.bases import app_settings
 from eagle.exceptions import APIAuthFailedException
 from eagle.logger import logger
-from eagle.enums import HttpAuthType
+from eagle.http.enums import HttpAuthType
 from eagle.http.hooks import log_response
 
 

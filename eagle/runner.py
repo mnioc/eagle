@@ -5,8 +5,10 @@ from eagle.http.client import AuthenticatedHttpClient
 from importlib import import_module
 import importlib.util
 from eagle.logger import logger
-from eagle.usecase.bases import UnitTestCase
-from eagle.usecase.suitus import TestSuitus
+from eagle.testcase.unit import HttpUnitTestCase
+from eagle.testcase.suitus import HttpTestSuite
+from eagle.testcase.evaluator import TestEvaluator
+from eagle.testcase.bases import TestCaseRegistry
 
 
 class Runner:
@@ -23,6 +25,7 @@ class Runner:
         self.root_path = root_path
         self.client = self._get_or_create_client(client_path)
         self.cases = []
+        self.evaluator = None
 
     def _get_or_create_client(self, client_path: Optional[str] = None) -> AuthenticatedHttpClient:
         if client_path is None:
@@ -35,11 +38,9 @@ class Runner:
                 return AuthenticatedHttpClient()
 
         logger.info(f'Loading client from {client_path}...')
-        spec = importlib.util.spec_from_file_location("client", client_path)
-        client_module = importlib.util.module_from_spec(spec)
-        sys.modules["client"] = client_module
-        spec.loader.exec_module(client_module)
-
+        client_module = self._extracted_from_load_case_from_module_12(
+            "client", client_path
+        )
         # we assume that the client is the first AuthenticatedHttpClient instance
         # in the client module
         # if it doesn't exist, we create a new client.
@@ -55,25 +56,38 @@ class Runner:
             logger.warning('Creating a new AuthenticatedHttpClient instance.')
             return AuthenticatedHttpClient()
 
-    def add_case(self, test_case: UnitTestCase) -> None:
+    def add_case(self, test_case: HttpUnitTestCase) -> None:
         self.cases.append(test_case)
+    
+    def extend_cases(self, test_cases: list) -> None:
+        self.cases.extend(test_cases)
 
     def load_case_from_yaml(self, yaml_file: str) -> None:
         ...
 
     def load_case_from_module(self, module_string: str) -> None:
-        spec = importlib.util.spec_from_file_location("module_string", module_string)
-        module = importlib.util.module_from_spec(spec)
-        sys.modules["module_string"] = module
-        spec.loader.exec_module(module)
-
+        module = self._extracted_from_load_case_from_module_12(
+            "module_string", module_string
+        )
         for var_name in dir(module):
-            cls = getattr(module, var_name)
-            if cls is UnitTestCase or cls is TestSuitus:
+            var = getattr(module, var_name)
+            if var is HttpUnitTestCase or var is HttpTestSuite:
                 continue
-            if isinstance(cls, type) and issubclass(cls, (UnitTestCase, TestSuitus)):
-                logger.info(f'Collecting {cls._name}: {cls.__name__} from {module_string}')
-                self.add_case(cls())
+            if isinstance(var, type) and issubclass(var, (HttpUnitTestCase, HttpTestSuite)):
+                logger.info(f'Collecting {var.__name__} from {module_string}')
+                self.add_case(var())
+            
+            if isinstance(var, TestCaseRegistry):
+                self.extend_cases(var.get_test_cases())
+
+
+    # TODO Rename this here and in `_get_or_create_client` and `load_case_from_module`
+    def _extracted_from_load_case_from_module_12(self, arg0, arg1):
+        spec = importlib.util.spec_from_file_location(arg0, arg1)
+        result = importlib.util.module_from_spec(spec)
+        sys.modules[arg0] = result
+        spec.loader.exec_module(result)
+        return result
 
     def auto_discover(self) -> None:
         logger.info(f'Auto discovering test cases in {self.root_path}...')
@@ -102,6 +116,5 @@ class Runner:
         self.auto_discover()
         for case in self.cases:
             case.execute()
-
-        for case in self.cases:
-            case.show_result()
+        self.evaluator = TestEvaluator(self.cases)
+        self.evaluator.show_test_result()

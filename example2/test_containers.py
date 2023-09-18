@@ -1,64 +1,72 @@
-import sys
-import os
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
-# print(sys.path)
 import client
-from eagle.usecase.bases import UnitTestCase
-from eagle.usecase.assertions import AssertStatusCodeEqual, AssertAllValueEqual
-from eagle.http.hooks import show_response_table, set_context_from_response
-from eagle.usecase.suitus import TestSuitus
-from eagle.context import context
+from eagle.testcase.check_points import HttpStatusCodeCheckPoint, UnitTeseCaseCheckPoint
+from eagle.testcase.suitus import HttpTestSuite
+from eagle.testcase.unit import HttpUnitTestCase
+from eagle.testcase.generator import TestCaseGenerator
+from eagle.testcase.bases import TestCaseRegistry
+from eagle.faker import fields, constraint, Faker
 
 
-class TestContainers(TestSuitus):
+class ContainerFaker(Faker):
 
-    payload = {
-        'name': '__20GP',
-        'type': 'shipping_container',
-        'length': 5925,
-        'width': 2340,
-        'height': 2379,
-        'weight': 20000,
-        'payload': 22100,
-        'cost': 200
-    }
+    name = fields.CharField(allow_blank=False, required=True, allow_null=False)
+    type = fields.ChoiceField(allow_blank=False, required=True, allow_null=False, choices=['pallet', 'shipping_container'])
+    length = fields.IntegerField(required=True, allow_null=False, min_value=1)
+    width = fields.IntegerField(required=True, allow_null=False, min_value=1)
+    height = fields.IntegerField(required=True, allow_null=False, min_value=1)
+    weight = fields.FloatField(required=False, allow_null=True, min_value=0)
+    payload = fields.FloatField(required=False, allow_null=True, min_value=0)
+    cost = fields.FloatField(required=False, allow_null=True, min_value=0)
+    extended_properties = fields.DictField(
+        required=False,
+        allow_null=True,
+        stack_height=fields.IntegerField(required=False, allow_null=True, min_value=1),
+    )
 
-    auto_generate_use_case = {
-        'method': 'POST',
-        'url': '/containers/',
-        'payload': payload,
-        'client': client.client,
-        'response_hooks': {
-            'check_status_code': AssertStatusCodeEqual(201),
-        }
-    }
+    class Meta:
+        relation_constraints = [
+            constraint.RelationConstraint(
+                condition=constraint.DictValueEqual(key='type', expected='pallet'),
+                constraints=[
+                    constraint.DictKeyExist(key='extended_properties', default={}),
+                    constraint.DictKeyExist(key=['extended_properties', 'stack_height'], default=120),
+                    constraint.DictValueNotNull(key=['extended_properties', 'stack_height'], default=120)
+                ]
+            )
+        ]
 
-    def test_create(self):
-        case = UnitTestCase(client.client, 'test_create_container')
-        case.build_request(method='POST', url='/containers/', json=self.payload)
-        case.register_response_hook('check_status_code', AssertStatusCodeEqual(201))
-        case.register_response_hook(
-            'set_context',
-            set_context_from_response,
-            hook_kwargs={
-                'context_key': 'container_id',
-                'json_path': '$.id'
-            }
-        )
-        case.execute(should_raise=True)
+# ContainerFaker.usecases.post('/containers/', HttpStatusCodeCheckPoint(201), client.client).execute()
+# ContainerFaker.usecases.put('/containers/', client.client).execute()
+# ContainerFaker.usecases.patch('/containers/', client.client)
+# ContainerFaker.usecases.delete('/containers/{container_id}/', client.client)
+# ContainerFaker.usecases.get('/containers/{container_id}/', client.client)
+# ContainerFaker.usecases.filter(type='pallet').list('/containers/{container_id}/', client.client, HttpResponseValueInListItemsCheckPoint())
+# ContainerFaker.usecases.search('40HQ').list('/containers/{container_id}/', client.client, HttpResponseValueInListItemsCheckPoint())
 
-    # def test_update(self):
-    #     case = UnitTestCase(client.client, 'test_update_container')
-    #     container_id = context.get('container_id')
-    #     data = self.payload.copy()
-    #     data['name'] = '__20GP_updated'
-    #     case.build_request(method='PUT', url=f'/containers/{container_id}/', json=data)
-    #     case.register_response_hook('check_status_code', AssertStatusCodeEqual(200))
-    #     case.register_response_hook('check_name_updated', AssertAllValueEqual('name', '__20GP_updated', '$'))
-    #     case.execute(should_raise=True)
 
-    def test_list(self):
-        case = UnitTestCase(client.client, 'test_list_containers')
-        case.build_request(method='GET', url='/containers/',)
-        case.register_response_hook('show_table', show_response_table, hook_kwargs={'response_data_json_path': '$'})
-        case.execute(should_raise=True)
+t = TestCaseRegistry()
+t.register(ContainerFaker.objects.create('/containers/', client.client, [HttpStatusCodeCheckPoint(201)]))
+
+t.register(
+    ContainerFaker.objects.delete(
+        url='/containers/{container_id}/',
+        client=client.client,
+        check_points=[
+            HttpStatusCodeCheckPoint(204),
+            UnitTeseCaseCheckPoint(
+                HttpUnitTestCase(
+                    method='GET',
+                    url='/containers/{container_id}/',
+                    client=client.client,
+                    check_points=[HttpStatusCodeCheckPoint(404)]
+                ),
+            )
+        ],
+        post_url='/containers/',
+        context_key='container_id',
+        json_path='$.id'
+    )
+)
+
+# t.register(ContainerFaker.objects.update(url='/containers/{container_id}/',client=client.client,post_url='/containers/',context_key='container_id',json_path='$.id'))
+
