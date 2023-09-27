@@ -1,7 +1,7 @@
 import client
-from eagle.testcase.check_points import HttpStatusCodeCheckPoint
-from eagle.testcase.bases import TestCaseRegistry
+from eagle.testcase import FakerAutoTestSuite, register_test_case
 from eagle.faker import fields, Faker
+from eagle.testcase.rest_caseset import CreateApiMixin
 
 
 class UserFaker(Faker):
@@ -37,8 +37,6 @@ How to use:
 }
 """
 
-t = TestCaseRegistry()
-
 # Auto generate test cases: POST {client.endpoint}/users/
 # Your API should accept a JSON object with the following fields:
 #     - name: string, required, max length 255
@@ -48,4 +46,16 @@ t = TestCaseRegistry()
 #     - phone: string, required, length 11
 #     - address: string, required, max length 255
 # And then `UserFaker` will auto generate valid and invalid data for you.
-t.register(UserFaker.objects.create('/users/', client.client, [HttpStatusCodeCheckPoint(201)]))
+
+
+@register_test_case
+class TestCreateUser(CreateApiMixin, FakerAutoTestSuite):
+    faker_class = UserFaker
+    client = client.client
+    url = '/users/'
+
+    # You can also customize the check points.
+    # create_valid_check_points = [HttpStatusCodeEqual(201)]
+
+    # You can also customize the check points.
+    # create_invalid_check_points = [HttpStatusCodeEqual(400)]

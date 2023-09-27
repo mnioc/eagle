@@ -1,18 +1,10 @@
-# eagle - HTTP API接口自动化测试框架
+# eagle - HTTP API 接口自动化测试框架
 
 **eagle** 是一款强大的HTTP API接口自动化测试框架，旨在简化和加速API测试过程。它能够自动发现测试用例，支持自动生成正向用例和异常用例，同时内置了多款HTTP认证客户端，使测试变得更加灵活和高效。
 
-## 什么是 eagle
+## 为什么叫 eagle
 
-*eagle* 意为老鹰，我们希望它能够像鹰眼一样，帮助您更快地发现API的潜在问题，更好地保护您的产品。我们将 *eagle* 视为：
-
-- **敏锐的视角：** 鹰以其锐利的视力而闻名，它可以高空俯视并精确捕捉目标。*eagle* 代表了对API接口的敏锐观察和测试，能够快速捕获问题和异常。
-
-- **高效和迅捷：** 鹰是一种快速、高效的猛禽，*eagle* 强调自动化测试的效率和速度。它可以帮助您在最短的时间内执行测试并获取结果。
-
-- **远见卓识：** 鹰象征着远见卓识，能够俯瞰整个领域并做出明智的决策。同样也希望 *eagle* 具备对API接口的全面测试和智能决策。
-
-- **自由飞翔：** 鹰在天空中自由飞翔，这象征着项目的自由和灵活性，您可以根据需要自定义和配置框架。
+*eagle* 意为老鹰，我们希望它能够像鹰眼一样，帮助您更快地发现API的潜在问题，更好地保护您的产品质量。
 
 ## eagle 的特性
 
@@ -48,28 +40,84 @@ pip install eagle
 
 1. 创建一个 Python 文件，例如 `test_sample.py`。
 
-2. 导入Eagle模块：
+
 
 ```python
-from eagle import TestCase, test_suite
-# 创建一个测试类，继承自TestCase：
-class SampleTestCase(TestCase):
-    def test_sample_request(self):
-        response = self.client.get('https://api.example.com/sample')
-        self.assertEqual(response.status_code, 200)
+import client
+from eagle.testcase import FakerAutoTestSuite, register_test_case
+from eagle.faker import fields, Faker
+from eagle.testcase.rest_caseset import CreateApiMixin
+
+
+class UserFaker(Faker):
+
+    name = fields.CharField(allow_blank=False, required=True, allow_null=False)
+    age = fields.IntegerField(required=True, allow_null=False, min_value=1)
+    sex = fields.ChoiceField(allow_blank=False, required=True, allow_null=False, choices=['0', '1'])
+    email = fields.EmailField(required=True, allow_null=False, allow_blank=False)
+    phone = fields.CharField(required=True, allow_null=False, allow_blank=False, min_length=11, max_length=11)
+    address = fields.CharField(required=True, allow_null=False, allow_blank=False, min_length=1, max_length=255)
+
+
+"""
+How to use:
+>>> faker = UserFaker()
+>>> faker.valid_data
+{
+    'name': 'Tom',
+    'age': 18,
+    'sex': '0',
+    'email': 'tom@email.com',
+    'phone': '12345678901',
+    'address': 'xxx'
+}
+>>> faker.invalid_data
+{
+    'name': '',  # it not allow blank !!!
+    'age': 18,
+    'sex': '0',
+    'email': 'tom@email.com',
+    'phone': '12345678901',
+    'address': 'xxx'
+}
+"""
+
+# Auto generate test cases: POST {client.endpoint}/users/
+# Your API should accept a JSON object with the following fields:
+#     - name: string, required, max length 255
+#     - age: integer, required, min value 1
+#     - sex: string, required, enum: ['0', '1']
+#     - email: string, required, valid email address
+#     - phone: string, required, length 11
+#     - address: string, required, max length 255
+# And then `UserFaker` will auto generate valid and invalid data for you.
+
+
+@register_test_case
+class TestCreateUser(CreateApiMixin, FakerAutoTestSuite):
+    faker_class = UserFaker
+    client = client.client
+    url = '/users/'
+
+    # You can also customize the check points.
+    # create_valid_check_points = [HttpStatusCodeEqual(201)]
+
+    # You can also customize the check points.
+    # create_invalid_check_points = [HttpStatusCodeEqual(400)]
+
 ```
 
 ## 贡献
-如果你想为Eagle做出贡献，请查看贡献指南了解更多信息。
+如果你想为 eagle 做出贡献，请查看贡献指南了解更多信息。
 
 ## 许可证
-本项目采用MIT许可证。详细信息请参阅LICENSE文件。
+本项目采用 MIT 许可证。详细信息请参阅 LICENSE 文件。
 
 ## 联系我们
-有问题或建议？请在GitHub上提交问题。我们欢迎您的反馈和贡献！
+有问题或建议？请在 GitHub 上提交问题。我们欢迎您的反馈和贡献！
 
 ## 常见问题
 查看常见问题以获取更多信息。
 
 ## 版本历史
-查看版本历史以了解Eagle的更新和变更记录。
+查看版本历史以了解 eagle 的更新和变更记录。
