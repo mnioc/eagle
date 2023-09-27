@@ -1,44 +1,43 @@
-# eagle - HTTP API 接口自动化测试框架
+# eagle - HTTP API Automation Testing Framework
+eagle is a powerful HTTP API automation testing framework designed to simplify and accelerate the API testing process. It can automatically discover test cases, support the generation of positive and negative test cases, and comes with multiple built-in HTTP authentication clients, making testing more flexible and efficient.
 
-**eagle** 是一款强大的HTTP API接口自动化测试框架，旨在简化和加速API测试过程。它能够自动发现测试用例，支持自动生成正向用例和异常用例，同时内置了多款HTTP认证客户端，使测试变得更加灵活和高效。
+Why is it called eagle?
 
-为什么叫 eagle？
+eagle means an eagle, and we hope it can help you discover potential issues with APIs faster, just like an eagle's eye, and better protect the quality of your product.
 
-*eagle* 意为老鹰，我们希望它能够像鹰眼一样，帮助您更快地发现API的潜在问题，更好地保护您的产品质量。
+## Features of eagle
+- Automatic discovery of test cases: eagle can automatically search and load unit tests and test suites in the specified directory, reducing the tedious configuration steps.
 
-## eagle 的特性
+- Built-in HTTP authentication clients: Supports common HTTP authentication methods, including basic authentication, digest authentication, etc., to easily meet different authentication requirements.
 
-- 自动发现测试用例： *eagle* 能够自动搜索和加载指定目录中的单元测试和测试套件，减少了配置的繁琐步骤。
+- Automatic generation of positive test cases: eagle can automatically generate positive test cases based on the API's input specification, reducing the workload of manually writing test cases.
 
-- 内置HTTP认证客户端： 支持常见的HTTP认证方式，包括基本认证、摘要认证等，轻松应对不同的认证需求。
+- Automatic generation of negative test cases: In addition to positive test cases, eagle also has the ability to automatically generate negative test cases, helping you comprehensively cover various scenarios of the API.
 
-- 自动生成正向用例： *eagle* 可以根据API的入参规范自动生成正向测试用例，减少了手工编写用例的工作量。
+- Support for multiple types of testing: eagle supports multiple types of test suites, including unit tests, interface tests, performance tests, etc., to meet different testing requirements.
 
-- 自动构造异常用例： 除了正向用例，*eagle* 还具备自动生成异常测试用例的能力，帮助您更全面地覆盖API的各种情况。
+- Support for multiple types of test reports: eagle supports multiple types of test reports, including HTML reports and Excel reports, to meet different reporting requirements.
 
-- 支持多种测试： *eagle* 支持多种测试套件，包括单元测试、接口测试、性能测试等，满足不同场景的测试需求。
+- Support for declaring test cases in YAML: eagle supports test cases in YAML format, allowing for concise test case definitions. This is a great choice for testers who are not familiar with programming.
 
-- 支持多种测试报告： *eagle* 支持多种测试报告，包括HTML报告、Excel报告，满足不同场景的报告需求。
-
-- 支持yaml声明式定义测试用例： *eagle* 支持yaml格式的测试用例，可以更加简洁地定义测试用例。这对于不会编程的测试人员来说，是一个很好的选择。
-
-- 支持pipeline式执行： 测试用例可能需要某些上下文环境，*eagle* 支持管道化执行，为测试用例提供完备的上下文管理。
+- Support for pipeline-style execution: Test cases may require certain context environments. eagle supports pipelined execution, providing complete context management for test cases.
 
 
-## 安装
 
-你可以使用 pip 安装 eagle:
+## Installation
+
+You can install eagle using pip:
 
 ```python
-pip install eagle
+pip install api_eagle
 ```
 
 
-## 快速开始
+## Getting Started
 
-### 创建一个测试用例
+### Create a Test Case
 
-1. 创建一个 Python 文件，例如 `test_sample.py`。
+1. Create a Python file, e.g., test_sample.py.
 
 
 
@@ -107,17 +106,17 @@ class TestCreateUser(CreateApiMixin, FakerAutoTestSuite):
 
 ```
 
-## 贡献
-如果你想为 eagle 做出贡献，请查看贡献指南了解更多信息。
+## Contributing
+If you would like to contribute to eagle, please check the contribution guidelines for more information.
 
-## 许可证
-本项目采用 MIT 许可证。详细信息请参阅 LICENSE 文件。
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 联系我们
-有问题或建议？请在 GitHub 上提交问题。我们欢迎您的反馈和贡献！
+## Contact Us
+Have questions or suggestions? Please submit an issue on GitHub. We welcome your feedback and contributions!
 
-## 常见问题
-查看常见问题以获取更多信息。
+## Frequently Asked Questions
+Check the FAQ for more information.
 
-## 版本历史
-查看版本历史以了解 eagle 的更新和变更记录。
+## Version History
+See the version history for updates and changes to eagle.

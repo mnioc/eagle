@@ -1,10 +1,25 @@
 [tool.poetry]
-name = "eagle"
-version = "0.1.0"
+name = "api_eagle"
+version = "0.1.2"
 description = ""
 authors = ["juqi.peng <pengjuqi@163.com>"]
 readme = "README.md"
+license = "MIT"
 packages = [{include = "eagle"}]
+homepage = "https://github.com/mnioc/eagle.git"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: Implementation :: Stackless",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10.4"
