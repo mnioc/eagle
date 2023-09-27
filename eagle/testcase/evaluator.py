@@ -1,6 +1,6 @@
 from typing import List, Union
-from eagle.testcase.unit import HttpUnitTestCase
-from eagle.testcase.suitus import HttpTestSuite
+from eagle.testcase.unit import APIEndpointTestCase
+from eagle.testcase.suitus import APITestSuite
 from prettytable import PrettyTable
 from colorama import Fore
 import json
@@ -8,20 +8,20 @@ import json
 
 class TestEvaluator:
 
-    def __init__(self, cases: List[Union[HttpUnitTestCase, HttpTestSuite]]):
+    def __init__(self, cases: List[Union[APIEndpointTestCase, APITestSuite]]):
         self.faliure_cases = []
         self.cases = self._collect_unit_case(cases)
 
     def _collect_unit_case(self, cases):
         new_cases = []
         for case in cases:
-            if isinstance(case, HttpUnitTestCase):
+            if isinstance(case, APIEndpointTestCase):
                 new_cases.append(case)
                 if not case.passed:
                     self.faliure_cases.append(case)
-            if isinstance(case, HttpTestSuite):
-                new_cases.extend(case.cases)
-                for _case in case.cases:
+            if isinstance(case, APITestSuite):
+                new_cases.extend(case._cases)
+                for _case in case._cases:
                     if not _case.passed:
                         self.faliure_cases.append(_case)
         return new_cases
@@ -34,7 +34,7 @@ class TestEvaluator:
 
     @property
     def pass_rate(self):
-        return 1 - len(self.faliure_cases) / len(self.cases)
+        return 1 - len(self.faliure_cases) / len(self.cases) if self.cases else 0
 
     @property
     def humen_pass_rate(self):
@@ -49,13 +49,19 @@ class TestEvaluator:
         if self.faliure_cases:
             print(f'{Fore.RED}')
             for case in self.faliure_cases:
-                body = json.dumps(case.request.json)
-                response = json.dumps(case.response.json())
                 print(f'case_name | {Fore.RED}{case.name}')
                 print(f'status    | {Fore.RED}FAILURE')
-                print(f'body      | {Fore.RED}{body}')
-                reason = ''.join(f'<{point.error_message}>' for point in case.not_passed_check_points)
+                if case.request.json:
+                    body = json.dumps(case.request.json)
+                    print(f'body      | {Fore.RED}{body}')
+                reason = ''.join(f'<{point.error_message}>' for point in case.failed_check_points)
                 print(f'reason    | {Fore.RED}{reason}')
+
+                try:
+                    response = json.dumps(case.response.json())
+                except Exception:
+                    response = case.response.text
+
                 print(f'response  | {Fore.RED}{response}')
                 print(Fore.RED+'-' * 150)
 

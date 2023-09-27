@@ -1,16 +1,20 @@
 
-
-class RestApiTestCaseRegistry(object):
+class TestCaseRegistry:
     def __init__(self):
-        self._testcases = {}
+        self.test_cases = []
 
-    def register(self, testcase):
-        self._testcases[testcase.name] = testcase
+    def register(self, test_case_cls):
+        self.test_cases.append(test_case_cls)
 
-    def get(self, name):
-        return self._testcases.get(name)
-    
+    def get_test_cases(self):
+        return self.test_cases
 
 
-if __name__ == '__main__':
-    ...
+registry = TestCaseRegistry()
+
+
+def register_test_case(test_case_cls):
+    test_case = test_case_cls
+    if isinstance(test_case_cls, type):
+        test_case = test_case_cls()
+    registry.register(test_case)

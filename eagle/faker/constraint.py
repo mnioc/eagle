@@ -1,4 +1,5 @@
 import copy
+import random
 from typing import List, Union, Callable, Any
 from functools import singledispatch
 
@@ -104,6 +105,22 @@ class DictValueEqual(BaseDictValue):
         return f'{self.key}=={self.expected}'
 
 
+class DictValueIn(BaseDictValue):
+
+    def __init__(self, expecteds, *args, **kwargs):
+        self.expecteds = expecteds
+        super().__init__(*args, **kwargs)
+
+    def check(self, data):
+        return self._get_value(data) in self.expecteds
+
+    def set_valid_value(self, data):
+        self._set_value(data, random.choice(self.expecteds))
+
+    def get_repr_condition(self):
+        return f'{self.key} in {self.expecteds}'
+
+
 class DictKeyExist(BaseDictValue):
 
     def __init__(self, default, *args, **kwargs):
@@ -115,7 +132,7 @@ class DictKeyExist(BaseDictValue):
 
     def set_valid_value(self, data):
         self._set_value(data, self.default)
-    
+
     def get_repr_condition(self):
         return f'{self.key} exist'
 
@@ -127,6 +144,31 @@ class DictKeyExist(BaseDictValue):
             data=invalid_data,
             field_name=self.get_whold_key(),
             invalid_reason=f'( missing_require  | where {condition.get_repr_condition()})',
+            whold_field=self.get_whold_key(),
+        )
+
+class DictKeyDoesNotExist(BaseDictValue):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def check(self, data):
+        return not self._key_exist(data)
+
+    def set_valid_value(self, data):
+        self.delete(data)
+
+    def get_repr_condition(self):
+        return f'{self.key} does not exist'
+
+    def generate_invalid_data(self, data, condition: BaseDictValue):
+        from eagle.faker.bases import InvalidData
+        invalid_data = copy.deepcopy(data)
+        self._set_value(invalid_data, None)
+        return InvalidData(
+            data=invalid_data,
+            field_name=self.get_whold_key(),
+            invalid_reason=f'( null | where {condition.get_repr_condition()} )',
             whold_field=self.get_whold_key(),
         )
 

@@ -1,7 +1,6 @@
 from requests.models import Response
 from eagle.logger import logger
 from eagle.utils import get_value_from_json_path, show_data_table
-from eagle.context import context
 
 
 def log_response(response: Response, *args, **kwargs) -> None:
@@ -16,17 +15,13 @@ def log_response(response: Response, *args, **kwargs) -> None:
         logger.info(msg)
 
 
-def show_response_table(response: Response, response_data_json_path: str, *args, **kwaargs) -> None:
+def show_response_table(response: Response, response_data_json_path: str, ignore_keys=None, *args, **kwaargs) -> None:
     """
     This function is used to show the response in a table format.
     """
-    data = get_value_from_json_path(response.json(), response_data_json_path)
-    show_data_table(data)
-
-
-def set_context_from_response(response: Response, context_key: str, json_path: str, *args, **kwargs) -> None:
-    """
-    This function is used to set the context from the response.
-    """
-    data = get_value_from_json_path(response.json(), json_path)
-    context.set(context_key, data)
+    try:
+        data = response.json()
+    except Exception:
+        return
+    data = get_value_from_json_path(data, response_data_json_path)
+    show_data_table(data, f'{response.request.method} {response.request.url}', ignore_keys)

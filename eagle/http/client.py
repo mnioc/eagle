@@ -5,6 +5,7 @@ from typing import Any, Type, Dict, Optional
 from requests.models import Response, Request
 from eagle.http.enums import HttpAuthType
 from eagle.http.auth import Authentication
+from eagle.http.hooks import show_response_table
 
 
 class HttpClient(requests.Session):
@@ -175,6 +176,26 @@ class AuthenticatedHttpClient(HttpClient, metaclass=StrategyMeta):
         prep = self.prepare_request(request)
         return self.send(prep, **kwargs)
 
+    def get(self, url: str, show_table: bool = False, json_path: str = None, ignore_keys: list = None, **kwargs: Any) -> Response:
+        """
+        This method is used to send a GET request.
+        """
+        res = self.request('GET', url, **kwargs)
+        if show_table:
+            show_response_table(res, json_path, ignore_keys)
+        return res
+
+    def post(self, url: str, **kwargs: Any) -> Response:
+        """
+        This method is used to send a POST request.
+        """
+        return self.request('POST', url, **kwargs)
+
+    def delete(self, url: str, **kwargs: Any) -> Response:
+        """
+        This method is used to send a DELETE request.
+        """
+        return self.request('DELETE', url, **kwargs)
 
 class BasicAuthenticatedClient(AuthenticatedHttpClient):
     """

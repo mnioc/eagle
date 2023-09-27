@@ -5,10 +5,9 @@ from eagle.http.client import AuthenticatedHttpClient
 from importlib import import_module
 import importlib.util
 from eagle.logger import logger
-from eagle.testcase.unit import HttpUnitTestCase
-from eagle.testcase.suitus import HttpTestSuite
+from eagle.testcase.unit import APIEndpointTestCase
+from eagle.testcase.suitus import APITestSuite, FakerAutoTestSuite
 from eagle.testcase.evaluator import TestEvaluator
-from eagle.testcase.bases import TestCaseRegistry
 
 
 class Runner:
@@ -21,11 +20,17 @@ class Runner:
     def from_yaml(cls, yaml_file: str) -> 'Runner':
         ...
 
-    def __init__(self, root_path: str, client_path: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        root_path: str,
+        client_path: Optional[str] = None,
+        prefix: str | None = None,
+    ) -> None:
         self.root_path = root_path
         self.client = self._get_or_create_client(client_path)
         self.cases = []
         self.evaluator = None
+        self.prefix = prefix
 
     def _get_or_create_client(self, client_path: Optional[str] = None) -> AuthenticatedHttpClient:
         if client_path is None:
@@ -38,9 +43,11 @@ class Runner:
                 return AuthenticatedHttpClient()
 
         logger.info(f'Loading client from {client_path}...')
-        client_module = self._extracted_from_load_case_from_module_12(
-            "client", client_path
-        )
+        spec = importlib.util.spec_from_file_location('client', client_path)
+        result = importlib.util.module_from_spec(spec)
+        sys.modules['client'] = result
+        client_module = spec.loader.exec_module(result)
+
         # we assume that the client is the first AuthenticatedHttpClient instance
         # in the client module
         # if it doesn't exist, we create a new client.
@@ -56,9 +63,9 @@ class Runner:
             logger.warning('Creating a new AuthenticatedHttpClient instance.')
             return AuthenticatedHttpClient()
 
-    def add_case(self, test_case: HttpUnitTestCase) -> None:
+    def add_case(self, test_case: APIEndpointTestCase) -> None:
         self.cases.append(test_case)
-    
+
     def extend_cases(self, test_cases: list) -> None:
         self.cases.extend(test_cases)
 
@@ -66,28 +73,10 @@ class Runner:
         ...
 
     def load_case_from_module(self, module_string: str) -> None:
-        module = self._extracted_from_load_case_from_module_12(
-            "module_string", module_string
-        )
-        for var_name in dir(module):
-            var = getattr(module, var_name)
-            if var is HttpUnitTestCase or var is HttpTestSuite:
-                continue
-            if isinstance(var, type) and issubclass(var, (HttpUnitTestCase, HttpTestSuite)):
-                logger.info(f'Collecting {var.__name__} from {module_string}')
-                self.add_case(var())
-            
-            if isinstance(var, TestCaseRegistry):
-                self.extend_cases(var.get_test_cases())
-
-
-    # TODO Rename this here and in `_get_or_create_client` and `load_case_from_module`
-    def _extracted_from_load_case_from_module_12(self, arg0, arg1):
-        spec = importlib.util.spec_from_file_location(arg0, arg1)
+        spec = importlib.util.spec_from_file_location('dynamic_module', module_string)
         result = importlib.util.module_from_spec(spec)
-        sys.modules[arg0] = result
+        sys.modules['dynamic_module'] = result
         spec.loader.exec_module(result)
-        return result
 
     def auto_discover(self) -> None:
         logger.info(f'Auto discovering test cases in {self.root_path}...')
@@ -96,6 +85,9 @@ class Runner:
 
         for root, _, files in os.walk(self.root_path):
             for file_name in files:
+
+                if self.prefix is not None and not file_name.startswith(self.prefix):
+                    continue
 
                 # we assume that the test case is in the root_path
                 # and is named test_*.py or test_*.yaml
@@ -113,7 +105,11 @@ class Runner:
                         self.load_case_from_yaml(yaml_path)
 
     def run(self) -> None:
+        from eagle.testcase.registry import registry
+        # print(registry.get_test_cases())
         self.auto_discover()
+        # print(registry.get_test_cases())
+        self.cases = registry.get_test_cases()
         for case in self.cases:
             case.execute()
         self.evaluator = TestEvaluator(self.cases)

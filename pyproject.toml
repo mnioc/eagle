@@ -17,6 +17,8 @@ pyyaml = "^6.0"
 colorama = "^0.4.6"
 prettytable = "^3.8.0"
 jsonpath-ng = "^1.5.3"
+ipython = "^8.15.0"
+pytz = "^2023.3.post1"
 
 [build-system]
 requires = ["poetry-core"]

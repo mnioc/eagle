@@ -1,5 +1,5 @@
 import inspect
-from typing import List, Dict, Union, Any
+from typing import List, Dict, Union, Any, Optional
 from collections import namedtuple
 from eagle.faker.fields import Field
 from eagle.faker.enums import InvalidProviderType
@@ -7,7 +7,7 @@ from eagle.faker.invalid import InvalidValue, InvalidDictValue
 import copy
 from eagle.faker.constraint import RelationConstraint
 from eagle.logger import logger
-from eagle.testcase.bases import TestCaseManager
+from eagle.faker.managers import AutoTestCaseManager, Manager
 
 
 class InvalidData(namedtuple('InvalidData', ['data', 'field_name', 'invalid_reason', 'whold_field'])):
@@ -63,9 +63,10 @@ class Faker(metaclass=RegisterFieldMetaclass):
         [InvalidData(data={'name': 'eagle', 'age': -1}, field_name='age', invalid_reason='exceed_min_value', whold_field='age')]
     """
 
-    objects = TestCaseManager()
-
     _declared_fields: Dict[str, Field] = {}
+
+    cases = AutoTestCaseManager()
+    objects = Manager()
 
     def __init__(self) -> None:
         self._invalid_data: List[InvalidData] = []

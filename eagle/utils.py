@@ -20,25 +20,36 @@ def get_value_from_json_path(
     return match[0].value if (match := json_path_parser.find(json_data)) else None
 
 
-def show_data_table(data: Union[Dict[str, Any], List[Any]]):
+def show_data_table(data: Union[Dict[str, Any], List[Any]], title: str = '', ignore_keys: List[str] = None):
+    if ignore_keys is None:
+        ignore_keys = []
+
     if not data:
+        table = PrettyTable()
+        table.title = title
+        table.field_names = ['No data']
+        print(table)
         return
 
     if isinstance(data, dict):
         data = [data]
 
     if isinstance(data, list):
-        max_keys_data = max(data, key=lambda item: len(item.keys()))
-        titles = list(max_keys_data.keys())
+        _extracted_from_show_data_table_12(data, ignore_keys, title)
 
-        table = PrettyTable()
-        table.field_names = titles
 
-        for item in data:
-            row_data = [to_long_data(item.get(title)) for title in titles]
-            table.add_row(row_data)
+# TODO Rename this here and in `show_data_table`
+def _extracted_from_show_data_table_12(data, ignore_keys, title):
+    max_keys_data = max(data, key=lambda item: len(item.keys()))
+    titles = [key for key in max_keys_data.keys() if key not in ignore_keys]
 
-        print(table)
+    table = PrettyTable()
+    table.title = title
+    table.field_names = titles
+    for item in data:
+        row_data = [to_long_data(item.get(title)) for title in titles if title not in ignore_keys]
+        table.add_row(row_data)
+    print(table)
 
 
 def is_valid_url(url):

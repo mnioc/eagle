@@ -5,13 +5,17 @@ from typing import (
     Callable,
     List
 )
+from eagle.http.hooks import log_response
 from requests.models import Request
-from eagle.testcase.bases import TestCase
 from eagle.http.client import AuthenticatedHttpClient
-from eagle.testcase.check_points import CheckPoint
+from eagle.testcase.check_points.http import HttpResponseCheckPoint
+from eagle.testcase.bases import TestCase
 
 
-class HttpUnitTestCase(TestCase):
+class APIEndpointTestCase(TestCase):
+    """
+    API single point testing is used to test a specific API endpoint.
+    """
 
     def __init__(
         self,
@@ -19,57 +23,64 @@ class HttpUnitTestCase(TestCase):
         url: str,
         name: Optional[str] = None,
         client: Optional[AuthenticatedHttpClient] = None,
-        headers: Optional[Dict] = None,
-        files: Optional[Any] = None,
-        data: Optional[Any] = None,
-        params: Optional[Any] = None,
-        auth: Optional[Any] = None,
-        cookies: Optional[Any] = None,
-        json: Optional[Dict] = None,
-        response_hooks: Optional[List[Callable]] = None,
-        check_points: Optional[List[CheckPoint]] = None,
+        check_points: Optional[List[HttpResponseCheckPoint]] = None,
+        response_hooks: List[Dict[str, Any]] | None = None,
+        **kwargs,
     ):
-        super().__init__()
+        """
+        Args:
+            method (str): HTTP method.
+            url (str): URL.
+            name (str, optional): Test case name. Defaults to None.
+            client (AuthenticatedHttpClient, optional): HTTP client. Defaults to None.
+            check_points (List[HttpResponseCheckPoint], optional): Check points. Defaults to None.
+            response_hooks (List[Callable], optional): Response hooks. Defaults to None.
+                e.g. [
+                    {
+                        'args': [],
+                        'kwargs': {},
+                        'func': log_response
+                    }
+                ]
+            **kwargs: Keyword arguments for requests.models.Request.
+        """
+        if name is None:
+            name = f"{method} {url}"
+        super().__init__(name)
         self.client = client
-        self.name = name
-        if self.name is None:
-            self.name = f"{method} {url}"
         if self.client is None:
             self.client = AuthenticatedHttpClient()
 
         self.request = Request(
             method=method.upper(),
             url=url,
-            headers=headers,
-            files=files,
-            data=data or {},
-            json=json,
-            params=params or {},
-            auth=auth,
-            cookies=cookies,
+            **kwargs,
         )
         self.response = None
 
-        self.response_hooks = response_hooks or []
         self.check_points = check_points or []
+        self.response_hooks = response_hooks
+        if self.response_hooks is None:
+            self.response_hooks = []
+
+        self.response_hooks.append({
+                'args': [],
+                'kwargs': {},
+                'func': log_response
+            })
 
     def execute_response_hooks(self, response) -> None:
         for hook in self.response_hooks:
-            hook(response)
+            func = hook['func']
+            func(response, *hook.get('args', []), **hook.get('kwargs', {}))
 
     def execute_check_points(self, response) -> None:
         for check_point in self.check_points:
             check_point(response)
-            if not check_point.satisfied:
+            if check_point.failed:
                 self.do_fail(check_point)
 
-    def register_response_hook(self, hook: Callable) -> None:
-        self.response_hooks.append(hook)
-
-    def register_check_point(self, check_point: CheckPoint) -> None:
-        self.check_points.append(check_point)
-
-    def execute(self, *args, **kwagrs) -> None:
+    def execute(self) -> None:
         self.response = self.client.send_request(self.request)
         self.execute_response_hooks(self.response)
         self.execute_check_points(self.response)

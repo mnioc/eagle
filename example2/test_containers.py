@@ -1,15 +1,13 @@
 import client
-from eagle.testcase.check_points import HttpStatusCodeCheckPoint, UnitTeseCaseCheckPoint
-from eagle.testcase.suitus import HttpTestSuite
-from eagle.testcase.unit import HttpUnitTestCase
-from eagle.testcase.generator import TestCaseGenerator
-from eagle.testcase.bases import TestCaseRegistry
 from eagle.faker import fields, constraint, Faker
+from eagle.testcase import FakerAutoTestSuite
+from eagle.testcase import register_test_case
+from eagle.testcase.rest_caseset import RestApiCaseSet
 
 
 class ContainerFaker(Faker):
 
-    name = fields.CharField(allow_blank=False, required=True, allow_null=False)
+    name = fields.CharField(allow_blank=False, required=True, allow_null=False, prefix='only_test_')
     type = fields.ChoiceField(allow_blank=False, required=True, allow_null=False, choices=['pallet', 'shipping_container'])
     length = fields.IntegerField(required=True, allow_null=False, min_value=1)
     width = fields.IntegerField(required=True, allow_null=False, min_value=1)
@@ -35,38 +33,21 @@ class ContainerFaker(Faker):
             )
         ]
 
-# ContainerFaker.usecases.post('/containers/', HttpStatusCodeCheckPoint(201), client.client).execute()
-# ContainerFaker.usecases.put('/containers/', client.client).execute()
-# ContainerFaker.usecases.patch('/containers/', client.client)
-# ContainerFaker.usecases.delete('/containers/{container_id}/', client.client)
-# ContainerFaker.usecases.get('/containers/{container_id}/', client.client)
-# ContainerFaker.usecases.filter(type='pallet').list('/containers/{container_id}/', client.client, HttpResponseValueInListItemsCheckPoint())
-# ContainerFaker.usecases.search('40HQ').list('/containers/{container_id}/', client.client, HttpResponseValueInListItemsCheckPoint())
 
+@register_test_case
+class TestContainer(RestApiCaseSet, FakerAutoTestSuite):
+    faker_class = ContainerFaker
+    url = '/containers/'
+    retrieve_url = '/containers/{pk}/'
+    client = client.client
 
-t = TestCaseRegistry()
-t.register(ContainerFaker.objects.create('/containers/', client.client, [HttpStatusCodeCheckPoint(201)]))
-
-t.register(
-    ContainerFaker.objects.delete(
-        url='/containers/{container_id}/',
-        client=client.client,
-        check_points=[
-            HttpStatusCodeCheckPoint(204),
-            UnitTeseCaseCheckPoint(
-                HttpUnitTestCase(
-                    method='GET',
-                    url='/containers/{container_id}/',
-                    client=client.client,
-                    check_points=[HttpStatusCodeCheckPoint(404)]
-                ),
-            )
-        ],
-        post_url='/containers/',
-        context_key='container_id',
-        json_path='$.id'
-    )
-)
-
-# t.register(ContainerFaker.objects.update(url='/containers/{container_id}/',client=client.client,post_url='/containers/',context_key='container_id',json_path='$.id'))
-
+    list_filters = {
+        'type': ['pallet', 'shipping_container']
+    }
+    list_search = {
+        'name': 'only_test_'
+    }
+    list_root_json_path = '$.results'
+    show_list_response = True
+    show_ignore_keys = ['id', 'created', 'district', 'modifiable', 'managedBy']
+    list_page_size_query_param = [5, 10]
