@@ -18,7 +18,8 @@ class Field:
         allow_null=True,
         generate_invalid_func: Optional[Callable] = None,
         invalid_values: Optional[List[InvalidValue]] = None,
-        disable_default_invalid_provider=False
+        disable_default_invalid_provider=False,
+        valid_value: Optional[Any] = None,
     ):
         """
         Args:
@@ -52,6 +53,8 @@ class Field:
 
         if not self.allow_null:
             self.register_invalid_provider(InvalidValueProvider.get_null_value)
+        
+        self.valid_value = valid_value
 
     def register_invalid_provider(self, provider):
         """
@@ -104,6 +107,8 @@ class BooleanField(Field):
     field_type = FieldType.BOOLEAN.value
 
     def generate_valid_value(self):
+        if self.valid_value is not None:
+            return self.valid_value
         return random.choice([True, False])
 
 
@@ -167,6 +172,8 @@ class CharField(Field):
             self.register_invalid_provider(InvalidValueProvider.get_blank_value)
 
     def generate_valid_value(self):
+        if self.valid_value is not None:
+            return self.valid_value
         allow_strings = ''.join(
             getattr(string, allow_string) for allow_string in self.allow_strings
         )
@@ -206,7 +213,8 @@ class IntegerField(Field):
             self.register_invalid_provider(InvalidValueProvider.get_invalid_min_value_value)
 
     def generate_valid_value(self):
-
+        if self.valid_value is not None:
+            return self.valid_value
         min_value = self.min_value
         if self.min_value is None:
             min_value = -1000
@@ -245,6 +253,8 @@ class ChoiceField(Field):
             self.register_invalid_provider(InvalidValueProvider.get_blank_value)
 
     def generate_valid_value(self):
+        if self.valid_value is not None:
+            return self.valid_value
         return random.choice(self.choices)
 
 
@@ -256,7 +266,8 @@ class FloatField(IntegerField):
         super().__init__(*args, **kwargs)
 
     def generate_valid_value(self):
-
+        if self.valid_value is not None:
+            return self.valid_value
         min_value = self.min_value
         if self.min_value is None:
             min_value = -1000
@@ -293,6 +304,8 @@ class DictField(Field):
         self.register_invalid_provider(InvalidValueProvider.get_invalid_dict_value)
 
     def generate_valid_value(self):
+        if self.valid_value is not None:
+            return self.valid_value
         return {
             field_name: field_instance.generate_valid_value()
             for field_name, field_instance in self.fields.items()
@@ -329,6 +342,8 @@ class ListField(Field):
         assert self.max_length >= self.min_length, "Maximum length must be greater than or equal to minimum length"
 
     def generate_valid_value(self):
+        if self.valid_value is not None:
+            return self.valid_value
         random_length = self.length or random.randint(self.min_length, self.max_length)
         return [
             field.generate_valid_value()
